@@ -31,9 +31,9 @@ export interface MyRequest extends NextRequest {
 }
 
 export const errorHandler = (
-  handler: (req: MyRequest, { params }: { params: any }) => Promise<Response>
+  handler: (req: any, { params }: { params: any }) => Promise<Response>
 ) => {
-  return async (req: MyRequest, { params }: { params: any }) => {
+  return async (req: any, { params }: { params: any }) => {
     try {
       const userId = fakeMiddleware(req);
 
