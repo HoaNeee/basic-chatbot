@@ -1,9 +1,11 @@
+import { userId_test } from "./contants";
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
 import { v1 } from "uuid";
 import { compare, hash } from "bcrypt-ts";
 import jwt from "jsonwebtoken";
 import { NextRequest } from "next/server";
+import { ApiError } from "./errors";
 
 export const hashPasswordUsingBcrypt = async (password: string) => {
   const salt = 10;
@@ -39,7 +41,7 @@ export const verifyJWT = (token: string) => {
     const decoded = jwt.verify(token, secret);
     return decoded as { _id: string; email: string; iat: number; exp: number };
   } catch (error) {
-    throw new Error("Invalid token");
+    throw new ApiError(401, "Invalid token");
   }
 };
 
@@ -51,7 +53,9 @@ export const fakeMiddleware = (req: NextRequest) => {
     return user._id;
   }
 
-  return null;
+  throw new ApiError(401, "Unauthorized");
+
+  return userId_test;
 };
 
 export const getValueInLocalStorage = (key: string) => {

@@ -1,7 +1,7 @@
 import { ApiError, errorHandler } from "@/lib/errors";
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 
-export const POST = errorHandler(async (req: Request) => {
+export const POST = errorHandler(async (req: NextRequest) => {
   const res = NextResponse.json({ success: true }, { status: 200 });
 
   const isGuest = res.cookies.get("is_guest")?.value === "true";

@@ -2,9 +2,9 @@ import connectDB from "@/lib/db/connect";
 import { login } from "@/lib/db/queries";
 import { errorHandler } from "@/lib/errors";
 import { signJWT } from "@/lib/utils";
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 
-export const POST = errorHandler(async (req: Request) => {
+export const POST = errorHandler(async (req: NextRequest) => {
   await connectDB();
 
   const body = await req.json();

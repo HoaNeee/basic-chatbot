@@ -1,7 +1,8 @@
+import { errorHandler } from "@/lib/errors";
 import { genUUID, signJWT } from "@/lib/utils";
 import { NextResponse } from "next/server";
 
-export const POST = async (req: Request) => {
+export const POST = errorHandler(async (req: Request) => {
   const maxAge = 60 * 60 * 24 * 15;
 
   const id = genUUID();
@@ -40,4 +41,4 @@ export const POST = async (req: Request) => {
   });
 
   return res;
-};
+});

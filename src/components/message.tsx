@@ -44,7 +44,7 @@ const Message = ({
           : ""
       }`}
     >
-      <div className="pt-4">
+      <div className="pt-1.5">
         <AIThinking />
       </div>
       <div

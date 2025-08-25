@@ -1,10 +1,10 @@
 import connectDB from "@/lib/db/connect";
-import { getChatHistoryWithUserId, getUser } from "@/lib/db/queries";
+import { getUser } from "@/lib/db/queries";
 import { verifyJWT } from "@/lib/utils";
 import { cookies } from "next/headers";
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 
-export const GET = async (req: Request) => {
+export const GET = async (req: NextRequest) => {
   try {
     await connectDB();
 
@@ -36,7 +36,7 @@ export const GET = async (req: Request) => {
     return NextResponse.json(
       {
         success: true,
-        data: data,
+        data: user,
       },
       { status: 200 }
     );

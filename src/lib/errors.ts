@@ -1,6 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { NextRequest, NextResponse } from "next/server";
-import { fakeMiddleware } from "./utils";
 
 export class ApiError extends Error {
   public status: number;
@@ -26,23 +25,11 @@ const getTypeError = (status: number) => {
   }
 };
 
-export interface MyRequest extends NextRequest {
-  userId: string;
-}
-
 export const errorHandler = (
-  handler: (req: any, { params }: { params: any }) => Promise<Response>
+  handler: (req: NextRequest, { params }: { params: any }) => Promise<Response>
 ) => {
-  return async (req: any, { params }: { params: any }) => {
+  return async (req: NextRequest, { params }: { params: any }) => {
     try {
-      const userId = fakeMiddleware(req);
-
-      if (!userId) {
-        throw new Error("Unauthorized");
-      }
-
-      req.userId = userId;
-
       return await handler(req, { params });
     } catch (error: any) {
       console.log(error);
