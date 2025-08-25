@@ -291,6 +291,51 @@ export const getMessageFromAI = async (
   }
 };
 
+export const deleteChat = async (chatId: string, userId: string) => {
+  try {
+    if (!userId || !chatId) {
+      throw new ApiError(400, "Bad request");
+    }
+
+    const record = await Chat.findOneAndDelete({ _id: chatId, userId });
+    await deleteMessages(chatId, userId);
+
+    if (!record) {
+      throw new ApiError(404, "Chat not found");
+    }
+
+    return record;
+  } catch (error) {
+    console.log(error);
+    if (error instanceof ApiError) {
+      throw error;
+    }
+    throw new ApiError(500, "Server error");
+  }
+};
+
+export const deleteMessages = async (chatId: string, userId: string) => {
+  try {
+    if (!userId || !chatId) {
+      throw new ApiError(400, "Bad request");
+    }
+
+    const records = await Message.deleteMany({ chatId, userId });
+
+    if (records.deletedCount === 0) {
+      throw new ApiError(404, "Messages not found");
+    }
+
+    return records;
+  } catch (error) {
+    console.log(error);
+    if (error instanceof ApiError) {
+      throw error;
+    }
+    throw new ApiError(500, "Server error");
+  }
+};
+
 const getMessageWithChatId = async (chatId: string, userId: string) => {
   try {
     if (!chatId) {

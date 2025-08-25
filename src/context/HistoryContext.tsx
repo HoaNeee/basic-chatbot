@@ -4,7 +4,7 @@
 import { TChat } from "@/types/Chat.types";
 import { createContext, useContext, useEffect, useReducer } from "react";
 import { useAuth } from "./AuthContext";
-import { get, patch } from "@/lib/request";
+import { del, get, patch } from "@/lib/request";
 
 interface HistoryState {
   history: TChat[];
@@ -19,7 +19,7 @@ type HistoryAction =
 
 const initialState = {
   history: [],
-  loading: false,
+  loading: true,
   error: null,
 };
 
@@ -43,6 +43,8 @@ interface HistoryContextType {
   state: HistoryState;
   newHistoryChat: (chatId: string, content: string) => Promise<void>;
   clearHistory: () => void;
+  deleteHistoryChat: (chatId: string) => Promise<void>;
+  updateHistory: (chatId: string, history: Partial<TChat>) => Promise<void>;
 }
 
 const HistoryContext = createContext<HistoryContextType | undefined>(undefined);
@@ -62,10 +64,10 @@ const HistoryProvider = ({ children }: { children: React.ReactNode }) => {
   const { state: authState } = useAuth();
 
   useEffect(() => {
-    if (authState.isAuthenticated) {
+    if (authState.user) {
       getChatHistory();
     }
-  }, [authState]);
+  }, [authState.user]);
 
   const getChatHistory = async () => {
     try {
@@ -95,6 +97,38 @@ const HistoryProvider = ({ children }: { children: React.ReactNode }) => {
     }
   };
 
+  const deleteHistoryChat = async (chatId: string) => {
+    try {
+      await del(`/api/chat/${chatId}`);
+      const history = state.history.filter((chat) => chat._id !== chatId);
+      dispatch({ type: "HISTORY_SUCCESS", payload: history });
+    } catch (error: any) {
+      dispatch({
+        type: "HISTORY_ERROR",
+        payload: error.message || "Failed to delete chat history",
+      });
+    }
+  };
+
+  const updateHistory = async (chatId: string, history: Partial<TChat>) => {
+    try {
+      await patch(`/api/chat/${chatId}`, history);
+      const histories = [...state.history];
+      const index = histories.findIndex((chat) => chat._id === chatId);
+
+      if (index !== -1) {
+        histories[index] = { ...histories[index], ...history };
+      }
+
+      dispatch({ type: "HISTORY_SUCCESS", payload: histories });
+    } catch (error: any) {
+      dispatch({
+        type: "HISTORY_ERROR",
+        payload: error.message || "Failed to update chat history",
+      });
+    }
+  };
+
   const clearHistory = () => {
     dispatch({ type: "HISTORY_SUCCESS", payload: [] });
   };
@@ -105,6 +139,8 @@ const HistoryProvider = ({ children }: { children: React.ReactNode }) => {
         state,
         newHistoryChat,
         clearHistory,
+        deleteHistoryChat,
+        updateHistory,
       }}
     >
       {children}

@@ -1,5 +1,5 @@
 export const promptTitle = (content: string) => {
-  return `Hãy tạo cho tôi một tiêu đề đoạn chat dựa vào input sau: ${content}, không cần giải thích gì thêm`;
+  return `Hãy tạo cho tôi một tiêu đề đoạn chat ngắn gọn dựa vào input sau: ${content}. Tiêu đề nên súc tích, rõ ràng và hấp dẫn, chỉ trả về chuỗi thông thường, không cần giải thích gì thêm. `;
 };
 
 export const promptChat = (content: string) => {

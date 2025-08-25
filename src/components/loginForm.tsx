@@ -2,12 +2,12 @@
 "use client";
 
 import { useState } from "react";
-import { Button } from "./ui/button";
 import { Input } from "./ui/input";
 import { Label } from "./ui/label";
 import { useAuth } from "@/context/AuthContext";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
+import ButtonLoading from "./button-loading";
 
 const LoginForm = () => {
   const [formData, setFormData] = useState<{ email: string; password: string }>(
@@ -17,7 +17,7 @@ const LoginForm = () => {
     }
   );
 
-  const { login } = useAuth();
+  const { state, login } = useAuth();
   const router = useRouter();
 
   const handleLogin = async (e: React.FormEvent) => {
@@ -30,7 +30,6 @@ const LoginForm = () => {
     try {
       await login(formData.email, formData.password);
       toast.success("Login successful");
-      router.push("/");
       router.refresh();
     } catch (error: any) {
       toast.error(error || "Login failed");
@@ -67,7 +66,13 @@ const LoginForm = () => {
             }
           />
         </div>
-        <Button className="py-5 mt-4">Login</Button>
+        <ButtonLoading
+          loading={state.loading}
+          className="py-5 mt-4"
+          type="submit"
+        >
+          Login
+        </ButtonLoading>
         <p className="dark:text-white/60 mt-4 text-sm text-center text-gray-600">
           {"Don't"} have an account?{" "}
           <a href="/register" className="text-primary font-semibold">

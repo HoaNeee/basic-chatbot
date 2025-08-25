@@ -3,7 +3,6 @@
 import { useChat } from "@/context/ChatContext";
 import { useEffect } from "react";
 import { AnimatePresence, motion } from "motion/react";
-import { usePathname } from "next/navigation";
 
 const HomePage = () => {
   const { clearChat } = useChat();

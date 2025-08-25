@@ -8,7 +8,6 @@ import React, { useContext, useEffect, useReducer } from "react";
 interface AuthState {
   user: TUser | null;
   loading: boolean;
-  isAuthenticated: boolean;
   error: string | null;
 }
 
@@ -40,8 +39,7 @@ interface AuthContextType {
 
 const initialState = {
   user: null,
-  loading: false,
-  isAuthenticated: false,
+  loading: true,
   error: null,
 };
 
@@ -57,7 +55,6 @@ const authReducer = (state: AuthState, action: AuthAction): AuthState => {
         ...state,
         user: action.payload || null,
         loading: false,
-        isAuthenticated: !!action.payload,
       };
 
     case "GET_USER_SUCCESS":
@@ -65,20 +62,17 @@ const authReducer = (state: AuthState, action: AuthAction): AuthState => {
         ...state,
         user: action.payload || null,
         loading: false,
-        isAuthenticated: !!action.payload,
       };
     case "LOGOUT":
       return {
         ...state,
         user: null,
-        isAuthenticated: false,
         loading: false,
       };
     case "FAILURE":
       return {
         ...state,
         user: null,
-        isAuthenticated: false,
         loading: false,
         error: action.payload?.error || null,
       };
@@ -137,8 +131,8 @@ export const AuthProvider = ({
   const logout = async () => {
     dispatch({ type: "PENDING" });
     try {
-      dispatch({ type: "LOGOUT" });
       await authService.logout();
+      dispatch({ type: "LOGOUT" });
     } catch (error: any) {
       dispatch({ type: "FAILURE", payload: { error: error.message } });
       throw error;

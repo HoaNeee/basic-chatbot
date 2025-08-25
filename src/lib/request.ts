@@ -43,7 +43,10 @@ export const post = async (
       throw result.error || new Error("Request failed");
     }
 
-    return result.data;
+    if (result.data) {
+      return result.data;
+    }
+    return result;
   } catch (error: any) {
     console.log(error);
     throw error.message || error;
@@ -76,7 +79,46 @@ export const patch = async (
       throw result.error || new Error("Request failed");
     }
 
-    return result.data;
+    if (result.data) {
+      return result.data;
+    }
+    return result;
+  } catch (error: any) {
+    console.log(error);
+    throw error.message || error;
+  }
+};
+
+export const del = async (
+  url: string,
+  options?: Record<string, any>,
+  config?: RequestInit
+) => {
+  try {
+    const response = await fetch(url, {
+      method: "DELETE",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      credentials: "include",
+      body: JSON.stringify(options),
+      ...config,
+    });
+
+    if (!response.ok && response.status === 500) {
+      throw new Error("Internal Server Error");
+    }
+
+    const result = await response.json();
+
+    if (!result.success) {
+      throw result.error || new Error("Request failed");
+    }
+
+    if (result.data) {
+      return result.data;
+    }
+    return result;
   } catch (error: any) {
     console.log(error);
     throw error.message || error;

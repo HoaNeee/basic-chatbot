@@ -12,12 +12,12 @@ import { ChevronUp, User } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
 import { useAuth } from "@/context/AuthContext";
 import { useRouter } from "next/navigation";
-import { useHistory } from "@/context/HistoryContext";
 import { useTheme } from "next-themes";
+import Spinner from "./ui/spinner";
+import { Skeleton } from "./ui/skeleton";
 
 const NavUser = ({ isGuest }: { isGuest: boolean }) => {
   const { state, logout } = useAuth();
-  const { clearHistory } = useHistory();
   const { theme, setTheme } = useTheme();
 
   const router = useRouter();
@@ -47,48 +47,55 @@ const NavUser = ({ isGuest }: { isGuest: boolean }) => {
     );
   };
 
+  const renderLoading = () => {
+    return (
+      <SidebarMenuButton className="dark:bg-neutral-800 dark:text-gray-200 w-full py-5 text-gray-500 bg-white">
+        <Skeleton className="size-8 rounded-full" />
+        <Skeleton className="flex-1 h-6" />
+        <Spinner size="small" className="ml-auto" />
+      </SidebarMenuButton>
+    );
+  };
+
   return (
     <SidebarMenu>
       <SidebarMenuItem className="px-2">
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild className="w-200">
-            {renderAvatar()}
-          </DropdownMenuTrigger>
-          <DropdownMenuContent
-            side="top"
-            style={{
-              width: "var(--radix-popper-anchor-width)",
-            }}
-          >
-            <DropdownMenuItem
-              className=""
-              onClick={() => {
-                setTheme(theme === "dark" ? "light" : "dark");
+        {state.loading ? (
+          renderLoading()
+        ) : (
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>{renderAvatar()}</DropdownMenuTrigger>
+            <DropdownMenuContent
+              side="top"
+              style={{
+                width: "var(--radix-popper-anchor-width)",
               }}
             >
-              Toggle Theme to {theme === "dark" ? "Light" : "Dark"}
-            </DropdownMenuItem>
-            {isGuest ? (
-              <>
-                <DropdownMenuItem onClick={() => router.push("/login")}>
-                  Login to your account
-                </DropdownMenuItem>
-              </>
-            ) : (
-              <>
+              <DropdownMenuItem
+                className=""
+                onClick={() => {
+                  setTheme(theme === "dark" ? "light" : "dark");
+                }}
+              >
+                Toggle Theme to {theme === "dark" ? "Light" : "Dark"}
+              </DropdownMenuItem>
+              {!isGuest ? (
                 <DropdownMenuItem
                   onClick={async () => {
                     await logout();
-                    clearHistory();
                     window.location.href = "/";
                   }}
                 >
                   Logout
                 </DropdownMenuItem>
-              </>
-            )}
-          </DropdownMenuContent>
-        </DropdownMenu>
+              ) : (
+                <DropdownMenuItem onClick={() => router.push("/login")}>
+                  Login to your account
+                </DropdownMenuItem>
+              )}
+            </DropdownMenuContent>
+          </DropdownMenu>
+        )}
       </SidebarMenuItem>
     </SidebarMenu>
   );

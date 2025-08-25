@@ -8,6 +8,7 @@ import { Label } from "./ui/label";
 import { toast } from "sonner";
 import { useAuth } from "@/context/AuthContext";
 import { useRouter } from "next/navigation";
+import ButtonLoading from "./button-loading";
 
 const RegisterForm = () => {
   const [formData, setFormData] = useState<{
@@ -20,7 +21,7 @@ const RegisterForm = () => {
     confirmPassword: "",
   });
 
-  const { register } = useAuth();
+  const { state, register } = useAuth();
   const router = useRouter();
 
   const handleRegister = async (e: React.FormEvent) => {
@@ -94,7 +95,9 @@ const RegisterForm = () => {
             autoComplete="new-confirmPassword"
           />
         </div>
-        <Button className="py-5 mt-4">Register</Button>
+        <ButtonLoading loading={state.loading} className="py-5 mt-4">
+          Register
+        </ButtonLoading>
         <p className="dark:text-white/60 mt-4 text-sm text-center text-gray-600">
           {"Already have an account?"}{" "}
           <a href="/login" className="text-primary font-semibold">
