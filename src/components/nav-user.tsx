@@ -79,7 +79,7 @@ const NavUser = ({ isGuest }: { isGuest: boolean }) => {
               >
                 Toggle Theme to {theme === "dark" ? "Light" : "Dark"}
               </DropdownMenuItem>
-              {!isGuest ? (
+              {!isGuest && state.user && state.user.email ? (
                 <DropdownMenuItem
                   onClick={async () => {
                     await logout();
