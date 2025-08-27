@@ -10,6 +10,7 @@ import {
 import { Chat, Message, User } from "./schema";
 import { promptChat, promptWeather } from "../ai/prompt";
 import { LocationResponse, WeatherResponse } from "@/types/Response.types";
+import { isObjectIdOrHexString } from "mongoose";
 
 export const login = async (email: string, password: string) => {
   try {
@@ -91,6 +92,9 @@ export const getUser = async (email: string) => {
 
 export const getChatHistoryWithUserId = async (userId: string) => {
   try {
+    if (!userId) {
+      return [];
+    }
     const chat = await Chat.find({ userId }).lean().sort({ updatedAt: -1 });
     return chat;
   } catch (error) {
@@ -108,7 +112,9 @@ export const getChatWithId = async (
   isMessage = true
 ) => {
   try {
-    if (!id) {
+    const isObjectId = isObjectIdOrHexString(id);
+
+    if (!id || !userId || !isObjectId) {
       throw new ApiError(400, "Bad request");
     }
 
@@ -162,7 +168,11 @@ export const saveChat = async (userId: string) => {
   }
 };
 
-export const updateChat = async (id: string, data: Partial<TChat>) => {
+export const updateChat = async (
+  id: string,
+  userId: string,
+  data: Partial<TChat>
+) => {
   try {
     if (!id || !data) {
       throw new ApiError(400, "Bad request");
@@ -172,6 +182,10 @@ export const updateChat = async (id: string, data: Partial<TChat>) => {
 
     if (!chat) {
       throw new ApiError(404, "Chat not found");
+    }
+
+    if (chat.userId !== userId) {
+      throw new ApiError(403, "Forbidden");
     }
 
     return chat;
@@ -244,12 +258,21 @@ export const updateMessage = async (id: string, message: Partial<TMessage>) => {
 export const getMessageFromAI = async (
   chatId: string,
   userId: string,
-  content: string
+  content: string,
+  input?: string
 ) => {
-  const [message_user, message_model] = await Promise.all([
-    saveMessage(userId, chatId, content, "user"),
-    saveMessage(userId, chatId, "content from AI", "model"),
-  ]);
+  const message_user = await saveMessage(
+    userId,
+    chatId,
+    input || content,
+    "user"
+  );
+  const message_model = await saveMessage(
+    userId,
+    chatId,
+    "content from AI",
+    "model"
+  );
 
   try {
     const messages = await getMessageWithChatId(chatId, userId);
@@ -357,17 +380,22 @@ export const getMessageWeather = async (
   content: string,
   location: string
 ) => {
-  const [message_user, message_model] = await Promise.all([
-    saveMessage(userId, chatId, content, "user", "pending", "weather"),
-    saveMessage(
-      userId,
-      chatId,
-      "content from AI",
-      "model",
-      "pending",
-      "weather"
-    ),
-  ]);
+  const message_user = await saveMessage(
+    userId,
+    chatId,
+    content,
+    "user",
+    "pending",
+    "weather"
+  );
+  const message_model = await saveMessage(
+    userId,
+    chatId,
+    "content from AI",
+    "model",
+    "pending",
+    "weather"
+  );
   try {
     const weatherData = (await getWeatherData(location)) as WeatherResponse;
 
@@ -418,13 +446,11 @@ export const getMessageWeather = async (
   }
 };
 
-const getMessageWithChatId = async (chatId: string, userId: string) => {
+export const getMessageWithChatId = async (chatId: string, userId: string) => {
   try {
     if (!chatId) {
       throw new ApiError(400, "Bad request");
     }
-
-    console.log(chatId, userId);
 
     const messages = await Message.find({ chatId })
       .lean()
@@ -458,7 +484,7 @@ const getWeatherData = async (location: string) => {
       `http://api.openweathermap.org/geo/1.0/direct?q=${location}&limit=1&appid=${api_key}`
     );
     if (!location_response.ok) {
-      throw new ApiError(500, "Failed to fetch weather data");
+      return null;
     }
     const location_result =
       (await location_response.json()) as LocationResponse[];
@@ -475,7 +501,7 @@ const getWeatherData = async (location: string) => {
     );
 
     if (!weather_response.ok) {
-      throw new ApiError(500, "Failed to fetch weather data");
+      return null;
     }
     const weather_result = (await weather_response.json()) as WeatherResponse;
 

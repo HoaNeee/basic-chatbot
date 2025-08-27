@@ -10,6 +10,7 @@ import { useParams } from "next/navigation";
 import rehypeHighlight from "rehype-highlight";
 import "highlight.js/styles/github-dark.css";
 import MessageIntent from "./message-intent";
+import FooterMessage from "./footer-message";
 
 const Message = ({
   message,
@@ -20,7 +21,7 @@ const Message = ({
   index: number;
   isNewMessage: boolean;
 }) => {
-  const { state, sendMessage, setMessage } = useChat();
+  const { state, sendMessage, setMessage, handleVote } = useChat();
   const [isEdit, setIsEdit] = useState(false);
   const [content, setContent] = useState(message.content);
 
@@ -100,44 +101,47 @@ const Message = ({
   }
 
   return (
-    <div
-      className={`flex w-full overflow-hidden gap-1 ${
-        index === state.messages.length - 1 && isNewMessage
-          ? "last-message"
-          : ""
-      }`}
-    >
-      <div className="pt-1.5">
-        <AIThinking />
-      </div>
+    <>
       <div
-        data-id={message._id}
-        className={`p-2.5 font-normal text-base text-black dark:text-white/90 space-y-4 h-full max-w-full md:max-w-3xl overflow-hidden`}
-        data-type="message"
-        data-role={message.role}
+        className={`flex w-full overflow-hidden gap-1 ${
+          index === state.messages.length - 1 && isNewMessage
+            ? "last-message"
+            : ""
+        }`}
       >
-        <ReactMarkdown
-          rehypePlugins={[rehypeHighlight]}
-          components={{
-            ul: ({ ...props }) => (
-              <ul className="space-y-1.5 list-disc pl-5" {...props} />
-            ),
-            pre: ({ ...props }) => (
-              <pre
-                className="md:max-w-3xl max-w-full overflow-x-auto rounded-md"
-                style={{
-                  scrollbarWidth: "thin",
-                  scrollbarColor: "rgba(100, 100, 100, 0.5) transparent",
-                }}
-                {...props}
-              />
-            ),
-          }}
+        <div className="pt-1.5">
+          <AIThinking />
+        </div>
+        <div
+          data-id={message._id}
+          className={`p-2.5 font-normal text-base text-black dark:text-white/90 space-y-4 h-full max-w-full md:max-w-3xl overflow-hidden`}
+          data-type="message"
+          data-role={message.role}
         >
-          {message.content}
-        </ReactMarkdown>
+          <ReactMarkdown
+            rehypePlugins={[rehypeHighlight]}
+            components={{
+              ul: ({ ...props }) => (
+                <ul className="space-y-1.5 list-disc pl-5" {...props} />
+              ),
+              pre: ({ ...props }) => (
+                <pre
+                  className="md:max-w-3xl max-w-full overflow-x-auto rounded-md"
+                  style={{
+                    scrollbarWidth: "thin",
+                    scrollbarColor: "rgba(100, 100, 100, 0.5) transparent",
+                  }}
+                  {...props}
+                />
+              ),
+            }}
+          >
+            {message.content}
+          </ReactMarkdown>
+          <FooterMessage message={message} handleVote={handleVote} />
+        </div>
       </div>
-    </div>
+    </>
   );
 };
 

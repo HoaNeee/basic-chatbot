@@ -3,6 +3,7 @@ export type IntentResponse = {
   intent: string;
   location?: string;
   content?: string;
+  input?: string;
 };
 
 export type LocationResponse = {

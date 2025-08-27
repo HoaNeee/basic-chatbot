@@ -4,8 +4,8 @@ import mongoose from "mongoose";
 
 const messageSchema = new mongoose.Schema(
   {
-    chatId: { type: String, required: true },
-    userId: { type: String, required: true },
+    chatId: { type: String, required: true, index: true },
+    userId: { type: String, required: true, index: true },
     content: { type: String, required: true },
     status: {
       type: String,
@@ -13,6 +13,8 @@ const messageSchema = new mongoose.Schema(
       default: "pending",
     },
     role: { type: String, enum: ["user", "model"], required: true },
+    upVoted: { type: [String], default: [] },
+    downVoted: { type: [String], default: [] },
     intent: { type: String, enum: ["weather", "general"], default: "general" },
     data: { type: Object },
   },

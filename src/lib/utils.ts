@@ -53,7 +53,15 @@ export const fakeMiddleware = (req: NextRequest) => {
     return user._id;
   }
 
-  throw new ApiError(401, "Unauthorized");
+  if (req.headers.get("authorization")) {
+    const token = req.headers.get("authorization")?.split(" ")[1];
+    if (token) {
+      const user = verifyJWT(token);
+      return user._id;
+    }
+  }
+
+  return "";
 };
 
 export const getValueInLocalStorage = (key: string) => {

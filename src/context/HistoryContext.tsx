@@ -60,15 +60,18 @@ export const useHistory = (): HistoryContextType => {
   return context;
 };
 
-const HistoryProvider = ({ children }: { children: React.ReactNode }) => {
+const HistoryProvider = ({
+  children,
+  histories,
+}: {
+  children: React.ReactNode;
+  histories: TChat[];
+}) => {
   const [state, dispatch] = useReducer(historyReducer, initialState);
-  const { state: authState } = useAuth();
 
   useEffect(() => {
-    if (authState.user) {
-      getChatHistory();
-    }
-  }, [authState.user]);
+    dispatch({ type: "HISTORY_SUCCESS", payload: histories });
+  }, [histories]);
 
   const getChatHistory = async () => {
     try {

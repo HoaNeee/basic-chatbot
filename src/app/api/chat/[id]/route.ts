@@ -1,16 +1,17 @@
 import { gemAI } from "@/lib/ai/models";
 import { promptIntent, promptTitle } from "@/lib/ai/prompt";
-import { userId_test } from "@/lib/contants";
 import connectDB from "@/lib/db/connect";
 import {
   deleteChat,
   getChatWithId,
   getMessageFromAI,
   getMessageWeather,
+  getMessageWithChatId,
   updateChat,
 } from "@/lib/db/queries";
 import { ApiError, errorHandler } from "@/lib/errors";
 import { fakeMiddleware, parseJSONFromAI } from "@/lib/utils";
+import { TMessage } from "@/types/Chat.types";
 import { IntentResponse } from "@/types/Response.types";
 import { NextRequest, NextResponse } from "next/server";
 
@@ -35,15 +36,22 @@ export const POST = errorHandler(async (req: NextRequest, { params }) => {
   const userId = fakeMiddleware(req);
   // const userId = userId_test;
 
+  const messages = await getMessageWithChatId(id, userId);
+
   const response_intent = (await gemAI.detectIntent(
-    promptIntent(content)
+    promptIntent(content, messages as TMessage[])
   )) as string;
 
   const object = parseJSONFromAI(response_intent) as IntentResponse;
   console.log("Detected intent:", object);
 
   if (object.intent === "general") {
-    const data = await getMessageFromAI(id, userId, object.content || content);
+    const data = await getMessageFromAI(
+      id,
+      userId,
+      object.content || content,
+      object.input
+    );
     return new NextResponse(data, {
       headers: {
         "Content-Type": "text/event-stream",
@@ -51,11 +59,7 @@ export const POST = errorHandler(async (req: NextRequest, { params }) => {
     });
   }
 
-  const location = object.location;
-
-  if (!location) {
-    throw new ApiError(400, "Location not found");
-  }
+  const location = object.location as string;
 
   const data = await getMessageWeather(id, userId, content, location);
 
@@ -83,7 +87,7 @@ export const PATCH = errorHandler(async (req: NextRequest, { params }) => {
 
   const newTitle = content ? await gemAI.generateContent(prompt) : title;
 
-  const newChat = await updateChat(id, { title: newTitle });
+  const newChat = await updateChat(id, userId, { title: newTitle });
 
   return NextResponse.json({ success: true, data: newChat }, { status: 200 });
 });

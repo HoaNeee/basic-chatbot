@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
-import { get, post, postStreamWithReader } from "@/lib/request";
+import { get, patch, post } from "@/lib/request";
 import { TChat, TMessage } from "@/types/Chat.types";
 import { createContext, useContext, useReducer } from "react";
 import { useRouter } from "next/navigation";
@@ -91,6 +91,11 @@ interface ChatContextType {
   getChatWithId: (chatId: string) => Promise<void>;
   setTyping: (typing: boolean) => void;
   clearError: () => void;
+  handleVote: (
+    messageId: string,
+    userId: string,
+    type: "up-vote" | "down-vote"
+  ) => Promise<void>;
 }
 
 const ChatContext = createContext<ChatContextType | undefined>(undefined);
@@ -170,7 +175,6 @@ const ChatProvider = ({ children }: { children: React.ReactNode }) => {
         dispatch({ type: "CHAT_THINKED", payload: queue });
         return;
       }
-      console.log(result);
       setMessage(
         result.content,
         result.chatId,
@@ -237,6 +241,38 @@ const ChatProvider = ({ children }: { children: React.ReactNode }) => {
     dispatch({ type: "CHAT_THINKING_ERROR", payload: null });
   };
 
+  const handleVote = async (
+    messageId: string,
+    userId: string,
+    type: "up-vote" | "down-vote"
+  ) => {
+    if (!messageId) return;
+    const messages = state.messages;
+
+    try {
+      const response = await patch(
+        `/api/chat/${state.chat?._id}/message/${messageId}/${type}`,
+        {
+          userId,
+        }
+      );
+      const { upVoted = [], downVoted = [] } = response;
+      const index = messages.findIndex((msg) => msg._id === messageId);
+
+      console.log(response);
+
+      // if (index !== -1) {
+      //   messages[index].upVoted = upVoted;
+      //   messages[index].downVoted = downVoted;
+      //   dispatch({ type: "CHAT_MESSAGES_SUCCESS", payload: messages });
+      // }
+    } catch (error) {
+      dispatch({ type: "CHAT_ERROR", payload: "Failed to vote on message" });
+      dispatch({ type: "CHAT_MESSAGES_SUCCESS", payload: messages });
+      throw error;
+    }
+  };
+
   const value = {
     state,
     sendMessage,
@@ -247,6 +283,7 @@ const ChatProvider = ({ children }: { children: React.ReactNode }) => {
     setMessage,
     getChatWithId,
     setTyping,
+    handleVote,
   };
 
   return <ChatContext.Provider value={value}>{children}</ChatContext.Provider>;

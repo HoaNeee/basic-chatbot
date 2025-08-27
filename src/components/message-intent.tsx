@@ -6,6 +6,7 @@ import rehypeHighlight from "rehype-highlight";
 import "highlight.js/styles/github-dark.css";
 import ReactMarkdown from "react-markdown";
 import BoxWeather from "./box-weather";
+import FooterMessage from "./footer-message";
 
 interface IMessageIntentProps {
   message: TMessage;
@@ -35,27 +36,11 @@ const MessageIntent = (props: IMessageIntentProps) => {
         data-type="message"
         data-role={message.role}
       >
-        <ReactMarkdown
-          rehypePlugins={[rehypeHighlight]}
-          components={{
-            ul: ({ ...props }) => (
-              <ul className="space-y-1.5 list-disc pl-5" {...props} />
-            ),
-            pre: ({ ...props }) => (
-              <pre
-                className="md:max-w-3xl max-w-full overflow-x-auto rounded-md"
-                style={{
-                  scrollbarWidth: "thin",
-                  scrollbarColor: "rgba(100, 100, 100, 0.5) transparent",
-                }}
-                {...props}
-              />
-            ),
-          }}
-        >
+        <ReactMarkdown rehypePlugins={[rehypeHighlight]}>
           {message.content}
         </ReactMarkdown>
         <BoxWeather weatherData={message.data} />
+        <FooterMessage message={message} />
       </div>
     </div>
   );

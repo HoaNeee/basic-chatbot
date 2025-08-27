@@ -7,6 +7,7 @@ import { useParams } from "next/navigation";
 import React, { useEffect, useLayoutEffect, useRef, useState } from "react";
 import ReactMarkdown from "react-markdown";
 import AIThinking from "./ai-thinking";
+import { TMessage } from "@/types/Chat.types";
 
 const TextStream = () => {
   const { state, clearChunk, setMessage, setTyping } = useChat();
@@ -21,8 +22,21 @@ const TextStream = () => {
   useEffect(() => {
     if (state.chunks && !state.chunks.empty() && !state.thinking) {
       solveText(state.chunks);
+    } else if (!state.typing && !state.thinking) {
+      let lastMessage: TMessage | null = null;
+
+      for (let i = state.messages.length - 1; i >= 0; i--) {
+        if (state.messages[i].role === "user") {
+          lastMessage = state.messages[i];
+          break;
+        }
+      }
+
+      if (lastMessage) {
+        checkAndCreateNewHistory(lastMessage.content);
+      }
     }
-  }, [state.chunks, state.thinking]);
+  }, [state.chunks, state.thinking, state.messages]);
 
   useLayoutEffect(() => {
     scrollBottom();
@@ -50,13 +64,16 @@ const TextStream = () => {
     setTyping(false);
     clearChunk();
     setMessage(textRef.current, id, "model");
+    await checkAndCreateNewHistory(textRef.current);
+    textRef.current = "";
+  };
+
+  const checkAndCreateNewHistory = async (content: string) => {
     const isNewChat = getValueInLocalStorage("is_new_chat");
     if (isNewChat) {
-      await newHistoryChat(id, textRef.current);
+      await newHistoryChat(id, content);
       localStorage.removeItem("is_new_chat");
     }
-
-    textRef.current = "";
   };
 
   const solveText = (queue: Queue<string>) => {

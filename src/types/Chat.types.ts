@@ -16,6 +16,8 @@ export interface TMessage {
   status?: "pending" | "failed" | "done";
   intent?: "weather" | "general";
   data?: Record<string, any>;
+  upVoted?: string[];
+  downVoted?: string[];
   createdAt?: Date;
   updatedAt?: Date;
 }

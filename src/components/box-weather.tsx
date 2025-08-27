@@ -14,6 +14,15 @@ const BoxWeather = ({
   };
 }) => {
   const [iconUrl, setIconUrl] = useState("");
+  const [loaded, setLoaded] = useState(true);
+
+  useEffect(() => {
+    setLoaded(false);
+
+    return () => {
+      setLoaded(true);
+    };
+  }, []);
 
   useEffect(() => {
     if (weatherData?.data?.weather?.[0]?.icon) {
@@ -42,11 +51,13 @@ const BoxWeather = ({
       background_string = "bg-gray-600";
   }
 
+  if (loaded) {
+    return <div className="md:w-80 w-70 min-h-96">Loading...</div>;
+  }
+
   if (!weatherData || !weatherData.data) {
     return null;
   }
-
-  console.log(weatherData);
 
   return (
     <div

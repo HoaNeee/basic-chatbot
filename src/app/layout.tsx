@@ -34,13 +34,39 @@ export const metadata: Metadata = {
   },
 };
 
+const getHistories = async (token: string) => {
+  try {
+    const response = await fetch("http://localhost:3000/api/chat", {
+      cache: "no-store",
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+      credentials: "include",
+    });
+    if (!response.ok) {
+      return [];
+    }
+    const data = await response.json();
+
+    if (!data.success) {
+      return [];
+    }
+
+    return data.data;
+  } catch (error) {
+    console.log(error);
+    return [];
+  }
+};
+
 export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
   const cookie = await cookies();
-  const token = cookie.get("jwt_token")?.value;
+  const token = cookie.get("jwt_token")?.value as string;
+  const histories = await getHistories(token);
 
   return (
     <html lang="en" suppressHydrationWarning>
@@ -49,7 +75,7 @@ export default async function RootLayout({
       >
         <ThemeProvider attribute={"class"} defaultTheme="light">
           <AuthProvider token={token}>
-            <HistoryProvider>
+            <HistoryProvider histories={histories}>
               <ChatProvider>
                 <Toaster position="top-right" />
                 {children}
