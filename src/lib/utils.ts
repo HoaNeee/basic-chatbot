@@ -7,6 +7,8 @@ import jwt from "jsonwebtoken";
 import { NextRequest } from "next/server";
 import { ApiError } from "./errors";
 
+export const BASE_URL = process.env.BASE_URL || "http://localhost:3000";
+
 export const hashPasswordUsingBcrypt = async (password: string) => {
   const salt = 10;
 

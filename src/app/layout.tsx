@@ -7,6 +7,7 @@ import ChatProvider from "@/context/ChatContext";
 import { cookies } from "next/headers";
 import HistoryProvider from "@/context/HistoryContext";
 import { ThemeProvider } from "next-themes";
+import { BASE_URL } from "@/lib/utils";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -36,7 +37,7 @@ export const metadata: Metadata = {
 
 const getHistories = async (token: string) => {
   try {
-    const response = await fetch("http://localhost:3000/api/chat", {
+    const response = await fetch(`${BASE_URL}/api/chat`, {
       cache: "no-store",
       headers: {
         Authorization: `Bearer ${token}`,
