@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
 import { get, post, postStreamWithReader } from "@/lib/request";
@@ -23,13 +24,13 @@ type ChatAction =
   | { type: "CHAT_THINKING" }
   | { type: "CHAT_SUCCESS"; payload: TChat | null }
   | { type: "CHAT_MESSAGES_SUCCESS"; payload: TMessage[] }
-  | { type: "CHAT_ERROR"; payload: string }
-  | { type: "CHAT_MESSAGES_ERROR"; payload: string }
+  | { type: "CHAT_ERROR"; payload: string | null }
+  | { type: "CHAT_MESSAGES_ERROR"; payload: string | null }
   | {
       type: "CHAT_THINKED";
       payload: Queue<string>;
     }
-  | { type: "CHAT_THINKING_ERROR"; payload: string }
+  | { type: "CHAT_THINKING_ERROR"; payload: string | null }
   | { type: "CHAT_TYPING" }
   | { type: "CHAT_TYPED" };
 
@@ -46,9 +47,9 @@ const initialState = {
 const chatReducer = (state: ChatState, action: ChatAction): ChatState => {
   switch (action.type) {
     case "CHAT_PENDING":
-      return { ...state, loading: true };
+      return { ...state, loading: true, error: null };
     case "CHAT_THINKING":
-      return { ...state, thinking: true };
+      return { ...state, thinking: true, error: null };
     case "CHAT_SUCCESS":
       return { ...state, chat: action.payload, loading: false };
     case "CHAT_THINKED":
@@ -58,13 +59,17 @@ const chatReducer = (state: ChatState, action: ChatAction): ChatState => {
     case "CHAT_THINKING_ERROR":
       return { ...state, error: action.payload, thinking: false };
     case "CHAT_MESSAGES_PENDING":
-      return { ...state, loading: true };
+      return { ...state, loading: true, error: null };
     case "CHAT_MESSAGES_SUCCESS":
-      return { ...state, messages: action.payload, loading: false };
+      return {
+        ...state,
+        messages: action.payload,
+        loading: false,
+      };
     case "CHAT_MESSAGES_ERROR":
       return { ...state, error: action.payload, loading: false };
     case "CHAT_TYPING":
-      return { ...state, typing: true };
+      return { ...state, typing: true, error: null };
     case "CHAT_TYPED":
       return { ...state, typing: false };
     default:
@@ -85,6 +90,7 @@ interface ChatContextType {
   setMessage: (content: string, chatId: string, role: "user" | "model") => void;
   getChatWithId: (chatId: string) => Promise<void>;
   setTyping: (typing: boolean) => void;
+  clearError: () => void;
 }
 
 const ChatContext = createContext<ChatContextType | undefined>(undefined);
@@ -131,33 +137,49 @@ const ChatProvider = ({ children }: { children: React.ReactNode }) => {
     }
   };
 
-  const sendMessage = async (content: string, chatId: string) => {
+  const sendMessage = async (
+    content: string,
+    chatId: string,
+    role: "user" | "model" = "user"
+  ) => {
     dispatch({ type: "CHAT_THINKING" });
     dispatch({ type: "CHAT_TYPING" });
     const id = chatId || state.chat?._id || "";
     try {
-      const reader = await postStreamWithReader(`/api/chat/${id}`, {
+      const result = await post(`/api/chat/${id}`, {
         content,
       });
 
-      const decoder = new TextDecoder("utf-8");
-
       const queue = new Queue<string>();
+      if (!result.intent) {
+        const reader = result;
+        const decoder = new TextDecoder("utf-8");
 
-      while (true) {
-        try {
-          const stream = await reader?.read();
-          if (stream?.done) {
-            break;
+        while (true) {
+          try {
+            const stream = await reader?.read();
+            if (stream?.done) {
+              break;
+            }
+            const chunk = decoder.decode(stream?.value, { stream: true });
+            queue.push(chunk);
+          } catch (error) {
+            throw error;
           }
-          const chunk = decoder.decode(stream?.value, { stream: true });
-          queue.push(chunk);
-        } catch (error) {
-          throw error;
         }
+        dispatch({ type: "CHAT_THINKED", payload: queue });
+        return;
       }
-
+      console.log(result);
+      setMessage(
+        result.content,
+        result.chatId,
+        "model",
+        result.intent,
+        result.data_weather
+      );
       dispatch({ type: "CHAT_THINKED", payload: queue });
+      setTyping(false);
     } catch (error) {
       dispatch({
         type: "CHAT_THINKING_ERROR",
@@ -177,7 +199,9 @@ const ChatProvider = ({ children }: { children: React.ReactNode }) => {
   const setMessage = (
     content: string,
     chatId: string,
-    role: "user" | "model"
+    role: "user" | "model",
+    intent: "general" | "weather" = "general",
+    data: Record<string, any> = {}
   ) => {
     const messages = state.messages;
 
@@ -186,6 +210,8 @@ const ChatProvider = ({ children }: { children: React.ReactNode }) => {
       role,
       chatId,
       userId: state.chat?.userId || "",
+      data,
+      intent,
       _id: genUUID(),
     };
 
@@ -205,10 +231,17 @@ const ChatProvider = ({ children }: { children: React.ReactNode }) => {
     dispatch({ type: "CHAT_THINKED", payload: newQueue });
   };
 
+  const clearError = () => {
+    dispatch({ type: "CHAT_ERROR", payload: null });
+    dispatch({ type: "CHAT_MESSAGES_ERROR", payload: null });
+    dispatch({ type: "CHAT_THINKING_ERROR", payload: null });
+  };
+
   const value = {
     state,
     sendMessage,
     createNewChat,
+    clearError,
     clearChunk,
     clearChat,
     setMessage,

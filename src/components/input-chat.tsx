@@ -7,11 +7,13 @@ import { useState } from "react";
 import { useChat } from "@/context/ChatContext";
 import { toast } from "sonner";
 import { useParams } from "next/navigation";
+import { useHistory } from "@/context/HistoryContext";
 
 const InputChat = () => {
   const [content, setContent] = useState("");
 
   const { state, sendMessage, createNewChat, setMessage } = useChat();
+  const { updateHistory } = useHistory();
   const params = useParams();
   const id = params.id as string;
 
@@ -30,8 +32,9 @@ const InputChat = () => {
       } else {
         console.log("Sending message to existing chat");
         localStorage.setItem("is_new_message", "true");
-        setMessage(newContent, state.chat._id, "user");
-        await sendMessage(newContent, state.chat._id, "user");
+        setMessage(newContent, id, "user");
+        await sendMessage(newContent, id, "user");
+        await updateHistory(id, { updatedAt: new Date() });
       }
     } catch (error) {
       console.log(error);

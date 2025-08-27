@@ -4,10 +4,10 @@ import {
   SidebarFooter,
   SidebarHeader,
 } from "./ui/sidebar";
-import Histories from "./histories";
 import NavUser from "./nav-user";
 import AppSidebarHeader from "./sidebar-header";
 import { cookies } from "next/headers";
+import SidebarHistoryContainer from "./sidebar-history-container";
 
 const AppSideBar = async () => {
   const cookie = await cookies();
@@ -20,7 +20,7 @@ const AppSideBar = async () => {
         <AppSidebarHeader />
       </SidebarHeader>
       <SidebarContent>
-        <Histories />
+        <SidebarHistoryContainer />
       </SidebarContent>
       <SidebarFooter>
         <NavUser isGuest={isGuest || false} />

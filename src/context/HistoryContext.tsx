@@ -15,7 +15,7 @@ interface HistoryState {
 type HistoryAction =
   | { type: "HISTORY_PENDING" }
   | { type: "HISTORY_SUCCESS"; payload: TChat[] }
-  | { type: "HISTORY_ERROR"; payload: string };
+  | { type: "HISTORY_ERROR"; payload: string | null };
 
 const initialState = {
   history: [],
@@ -29,7 +29,7 @@ const historyReducer = (
 ): HistoryState => {
   switch (action.type) {
     case "HISTORY_PENDING":
-      return { ...state, loading: true };
+      return { ...state, loading: true, error: null };
     case "HISTORY_SUCCESS":
       return { ...state, history: action.payload, loading: false };
     case "HISTORY_ERROR":
@@ -45,6 +45,7 @@ interface HistoryContextType {
   clearHistory: () => void;
   deleteHistoryChat: (chatId: string) => Promise<void>;
   updateHistory: (chatId: string, history: Partial<TChat>) => Promise<void>;
+  clearError: () => void;
 }
 
 const HistoryContext = createContext<HistoryContextType | undefined>(undefined);
@@ -133,6 +134,10 @@ const HistoryProvider = ({ children }: { children: React.ReactNode }) => {
     dispatch({ type: "HISTORY_SUCCESS", payload: [] });
   };
 
+  const clearError = () => {
+    dispatch({ type: "HISTORY_ERROR", payload: null });
+  };
+
   return (
     <HistoryContext.Provider
       value={{
@@ -141,6 +146,7 @@ const HistoryProvider = ({ children }: { children: React.ReactNode }) => {
         clearHistory,
         deleteHistoryChat,
         updateHistory,
+        clearError,
       }}
     >
       {children}

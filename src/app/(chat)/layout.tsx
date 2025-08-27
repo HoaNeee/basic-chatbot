@@ -12,7 +12,7 @@ export default function RootLayout({
     <SidebarProvider>
       <AppSideBar />
 
-      <main className="flex flex-col flex-1 max-h-screen">
+      <main className="flex flex-col flex-1 w-full max-h-screen">
         <Header />
         {children}
         <FooterChat />

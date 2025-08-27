@@ -43,9 +43,6 @@ class AIGemini {
     this.chat = this.ai.chats.create({
       model: this.model,
       history: initialHistory ?? DEFAULT_HISTORY,
-      config: {
-        maxOutputTokens: 2000,
-      },
     });
     return this.chat;
   }
@@ -76,6 +73,9 @@ class AIGemini {
     }
     const response = await this.chat.sendMessageStream({
       message: content,
+      config: {
+        maxOutputTokens: 1500,
+      },
     });
 
     return response;
@@ -87,6 +87,17 @@ class AIGemini {
       model: this.model,
       config: {
         maxOutputTokens: 1000,
+      },
+    });
+    return response.text;
+  }
+
+  async detectIntent(prompt: string) {
+    const response = await this.ai.models.generateContent({
+      contents: prompt,
+      model: "gemini-1.5-flash",
+      config: {
+        maxOutputTokens: 500,
       },
     });
     return response.text;

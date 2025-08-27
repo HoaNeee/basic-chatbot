@@ -54,8 +54,6 @@ export const fakeMiddleware = (req: NextRequest) => {
   }
 
   throw new ApiError(401, "Unauthorized");
-
-  return userId_test;
 };
 
 export const getValueInLocalStorage = (key: string) => {
@@ -63,6 +61,24 @@ export const getValueInLocalStorage = (key: string) => {
     return window.localStorage.getItem(key);
   }
   return null;
+};
+
+export const parseJSONFromAI = (output?: string) => {
+  try {
+    if (!output) {
+      throw new ApiError(400, "No output provided");
+    }
+
+    const string = output.slice(
+      output.indexOf("{"),
+      output.lastIndexOf("}") + 1
+    );
+    const json = JSON.parse(string);
+    return json;
+  } catch (error) {
+    console.error("Error parsing JSON from AI:", error);
+    return null;
+  }
 };
 
 export function cn(...inputs: ClassValue[]) {

@@ -12,8 +12,8 @@ const Chats = () => {
   const isNewMessage = useNewMessage();
 
   return (
-    <div className="w-full h-full max-w-3xl p-4 mx-auto">
-      <div className="h-full space-y-2">
+    <div className="md:max-w-3xl w-full h-full max-w-full p-4 mx-auto">
+      <div className="md:max-w-3xl w-full h-full max-w-full space-y-2">
         {state.messages.map((message, index) => (
           <Message
             key={index}

@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { TChat, TMessage } from "@/types/Chat.types";
 import { TUser } from "@/types/User.types";
 import mongoose from "mongoose";
@@ -14,6 +13,8 @@ const messageSchema = new mongoose.Schema(
       default: "pending",
     },
     role: { type: String, enum: ["user", "model"], required: true },
+    intent: { type: String, enum: ["weather", "general"], default: "general" },
+    data: { type: Object },
   },
   { timestamps: true }
 );

@@ -1,9 +1,15 @@
-import { TChat } from "@/types/Chat.types";
+/* eslint-disable @typescript-eslint/no-explicit-any */
+import { TChat, TMessage } from "@/types/Chat.types";
 import { gemAI } from "../ai/models";
 import { ApiError } from "../errors";
-import { hashPasswordUsingBcrypt, verifyPassword } from "../utils";
+import {
+  hashPasswordUsingBcrypt,
+  parseJSONFromAI,
+  verifyPassword,
+} from "../utils";
 import { Chat, Message, User } from "./schema";
-import { promptChat } from "../ai/prompt";
+import { promptChat, promptWeather } from "../ai/prompt";
+import { LocationResponse, WeatherResponse } from "@/types/Response.types";
 
 export const login = async (email: string, password: string) => {
   try {
@@ -183,7 +189,9 @@ export const saveMessage = async (
   chatId: string,
   content: string,
   role: string,
-  status?: "failed" | "done" | "pending"
+  status?: "failed" | "done" | "pending",
+  intent = "general",
+  data?: Record<string, any>
 ) => {
   try {
     if (!userId || !chatId || !content) {
@@ -196,6 +204,8 @@ export const saveMessage = async (
       content: content,
       role: role,
       status: status || "pending",
+      intent,
+      data,
     });
 
     await newMessage.save();
@@ -209,26 +219,19 @@ export const saveMessage = async (
   }
 };
 
-export const updateStatusMessage = async (
-  id: string,
-  status: "failed" | "done" | "pending"
-) => {
+export const updateMessage = async (id: string, message: Partial<TMessage>) => {
   try {
-    if (!id || !status) {
+    if (!id || !message) {
       throw new ApiError(400, "Bad request");
     }
 
-    const message = await Message.findByIdAndUpdate(
-      id,
-      { status },
-      { new: true }
-    );
+    const record = await Message.findByIdAndUpdate(id, message, { new: true });
 
-    if (!message) {
+    if (!record) {
       throw new ApiError(404, "Message not found");
     }
 
-    return message;
+    return record;
   } catch (error) {
     console.log(error);
     if (error instanceof ApiError) {
@@ -243,7 +246,10 @@ export const getMessageFromAI = async (
   userId: string,
   content: string
 ) => {
-  const message = await saveMessage(userId, chatId, content, "user");
+  const [message_user, message_model] = await Promise.all([
+    saveMessage(userId, chatId, content, "user"),
+    saveMessage(userId, chatId, "content from AI", "model"),
+  ]);
 
   try {
     const messages = await getMessageWithChatId(chatId, userId);
@@ -276,17 +282,26 @@ export const getMessageFromAI = async (
           text += chunk.text;
         }
         controller.close();
-        await saveMessage(userId, chatId, text, "model", "done");
+        await updateMessage(String(message_model._id), {
+          content: text,
+          status: "done",
+        });
       },
     });
 
-    await updateStatusMessage(String(message._id), "done");
+    await updateMessage(String(message_user._id), {
+      status: "done",
+    });
 
     return stream;
   } catch (error) {
-    if (message) {
-      await updateStatusMessage(String(message._id), "failed");
+    if (message_user && message_model) {
+      await Promise.all([
+        updateMessage(String(message_user._id), { status: "failed" }),
+        updateMessage(String(message_model._id), { status: "failed" }),
+      ]);
     }
+
     throw error;
   }
 };
@@ -336,6 +351,73 @@ export const deleteMessages = async (chatId: string, userId: string) => {
   }
 };
 
+export const getMessageWeather = async (
+  chatId: string,
+  userId: string,
+  content: string,
+  location: string
+) => {
+  const [message_user, message_model] = await Promise.all([
+    saveMessage(userId, chatId, content, "user", "pending", "weather"),
+    saveMessage(
+      userId,
+      chatId,
+      "content from AI",
+      "model",
+      "pending",
+      "weather"
+    ),
+  ]);
+  try {
+    const weatherData = (await getWeatherData(location)) as WeatherResponse;
+
+    const prompt = promptWeather(content, weatherData);
+
+    const messages = await getMessageWithChatId(chatId, userId);
+
+    if (messages.length > 0) {
+      const history = messages.map((msg) => ({
+        role: msg.role,
+        parts: [{ text: msg.content }],
+      }));
+      gemAI.createNewChat(history);
+    } else {
+      gemAI.createNewChat();
+    }
+
+    const data = await gemAI.sendMessage(prompt);
+
+    const response: {
+      content: string;
+      intent: string;
+      data_weather: WeatherResponse;
+    } = parseJSONFromAI(data);
+
+    await Promise.all([
+      updateMessage(String(message_user._id), {
+        status: "done",
+      }),
+      updateMessage(String(message_model._id), {
+        content: response.content,
+        status: "done",
+        intent: "weather",
+        data: response.data_weather,
+      }),
+    ]);
+
+    return response;
+  } catch (error) {
+    if (message_user && message_model) {
+      await Promise.all([
+        updateMessage(String(message_user._id), { status: "failed" }),
+        updateMessage(String(message_model._id), { status: "failed" }),
+      ]);
+    }
+
+    throw error;
+  }
+};
+
 const getMessageWithChatId = async (chatId: string, userId: string) => {
   try {
     if (!chatId) {
@@ -362,5 +444,43 @@ const getMessageWithChatId = async (chatId: string, userId: string) => {
       throw error;
     }
     throw new ApiError(500, "Server error");
+  }
+};
+
+const getWeatherData = async (location: string) => {
+  try {
+    const api_key = process.env.WEATHER_API_KEY;
+    if (!api_key) {
+      throw new ApiError(500, "Weather API key not found");
+    }
+
+    const location_response = await fetch(
+      `http://api.openweathermap.org/geo/1.0/direct?q=${location}&limit=1&appid=${api_key}`
+    );
+    if (!location_response.ok) {
+      throw new ApiError(500, "Failed to fetch weather data");
+    }
+    const location_result =
+      (await location_response.json()) as LocationResponse[];
+
+    if (location_result.length === 0) {
+      return null;
+    }
+
+    const lat = location_result[0].lat;
+    const lon = location_result[0].lon;
+
+    const weather_response = await fetch(
+      `https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lon}&units=metric&appid=${api_key}`
+    );
+
+    if (!weather_response.ok) {
+      throw new ApiError(500, "Failed to fetch weather data");
+    }
+    const weather_result = (await weather_response.json()) as WeatherResponse;
+
+    return weather_result;
+  } catch (error) {
+    throw error;
   }
 };

@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 export interface TChat {
   _id: string;
   userId: string;
@@ -13,6 +14,8 @@ export interface TMessage {
   role: "user" | "model";
   content: string;
   status?: "pending" | "failed" | "done";
+  intent?: "weather" | "general";
+  data?: Record<string, any>;
   createdAt?: Date;
   updatedAt?: Date;
 }

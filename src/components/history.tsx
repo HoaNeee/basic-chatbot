@@ -28,6 +28,12 @@ const History = ({
   const [isEditing, setIsEditing] = useState(false);
   const [title, setTitle] = useState(history.title);
 
+  const update = async (id: string, newHistory: Partial<TChat>) => {
+    if (newHistory.title === history.title) return;
+
+    await updateHistory(id, newHistory);
+  };
+
   return (
     <div key={history._id} className={`relative cursor-pointer group/item`}>
       {!isEditing ? (
@@ -55,12 +61,12 @@ const History = ({
             if (e.key === "Enter") {
               e.preventDefault();
               setIsEditing(false);
-              updateHistory(history._id, { title });
+              update(history._id, { title });
             }
           }}
           onBlur={() => {
             setIsEditing(false);
-            updateHistory(history._id, { title });
+            update(history._id, { title });
           }}
           defaultValue={history.title || "Untitled"}
         />

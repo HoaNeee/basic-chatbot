@@ -7,6 +7,9 @@ import { useState } from "react";
 import { Textarea } from "./ui/textarea";
 import { Button } from "./ui/button";
 import { useParams } from "next/navigation";
+import rehypeHighlight from "rehype-highlight";
+import "highlight.js/styles/github-dark.css";
+import MessageIntent from "./message-intent";
 
 const Message = ({
   message,
@@ -76,9 +79,29 @@ const Message = ({
     );
   }
 
+  if (message.status === "failed") {
+    return (
+      <div className="dark:text-white/90 md:max-w-3xl max-w-full space-y-4 overflow-hidden text-base font-normal text-black">
+        <p className="p-2.5 text-white bg-red-500 inline-block rounded-md mt-2">
+          Error, please try again later.
+        </p>
+      </div>
+    );
+  }
+
+  if (message.intent === "weather") {
+    return (
+      <MessageIntent
+        message={message}
+        index={index}
+        isNewMessage={isNewMessage}
+      />
+    );
+  }
+
   return (
     <div
-      className={`flex gap-1 ${
+      className={`flex w-full overflow-hidden gap-1 ${
         index === state.messages.length - 1 && isNewMessage
           ? "last-message"
           : ""
@@ -89,21 +112,23 @@ const Message = ({
       </div>
       <div
         data-id={message._id}
-        className={`p-2.5 font-normal text-base text-black dark:text-white/90 space-y-4 h-full`}
+        className={`p-2.5 font-normal text-base text-black dark:text-white/90 space-y-4 h-full max-w-full md:max-w-3xl overflow-hidden`}
         data-type="message"
         data-role={message.role}
       >
         <ReactMarkdown
+          rehypePlugins={[rehypeHighlight]}
           components={{
             ul: ({ ...props }) => (
               <ul className="space-y-1.5 list-disc pl-5" {...props} />
             ),
-            code: ({ ...props }) => (
-              <code className="p-1 bg-gray-100 rounded-md" {...props} />
-            ),
             pre: ({ ...props }) => (
               <pre
-                className="bg-neutral-800 dark:bg-neutral-200 dark:text-black/80 p-4 my-3 overflow-x-auto text-gray-100 rounded-lg"
+                className="md:max-w-3xl max-w-full overflow-x-auto rounded-md"
+                style={{
+                  scrollbarWidth: "thin",
+                  scrollbarColor: "rgba(100, 100, 100, 0.5) transparent",
+                }}
                 {...props}
               />
             ),

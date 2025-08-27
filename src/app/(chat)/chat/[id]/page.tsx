@@ -9,7 +9,7 @@ import React, { useEffect } from "react";
 import { toast } from "sonner";
 
 const ChatPage = () => {
-  const { state, clearChat, getChatWithId } = useChat();
+  const { state, getChatWithId, clearError } = useChat();
 
   const params = useParams();
   const id = params.id as string;
@@ -17,11 +17,9 @@ const ChatPage = () => {
   useEffect(() => {
     if (state.error) {
       toast.error(state.error);
-      clearChat();
-      window.location.href = "/";
+      clearError();
       return;
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [state.error]);
 
   useEffect(() => {
@@ -41,7 +39,7 @@ const ChatPage = () => {
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.3, ease: "easeInOut" }}
-        className={`relative flex-1 overflow-hidden overflow-y-auto`}
+        className={`relative flex-1 overflow-hidden overflow-y-auto w-full`}
         style={{
           scrollBehavior: state.thinking ? "smooth" : "unset",
         }}

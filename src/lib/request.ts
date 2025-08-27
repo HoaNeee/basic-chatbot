@@ -37,6 +37,13 @@ export const post = async (
       throw new Error("Internal Server Error");
     }
 
+    const contentType = response.headers.get("Content-Type");
+
+    if (contentType === "text/event-stream") {
+      const reader = response.body?.getReader();
+      return reader;
+    }
+
     const result = await response.json();
 
     if (!result.success) {
@@ -142,8 +149,16 @@ export const postStreamWithReader = async (
       throw new Error("Failed to fetch");
     }
 
-    const reader = response.body?.getReader();
-    return reader;
+    const contentType = response.headers.get("Content-Type");
+
+    if (contentType === "text/event-stream") {
+      const reader = response.body?.getReader();
+      return reader;
+    }
+
+    const result = await response.json();
+
+    return result;
   } catch (error) {
     throw error;
   }
