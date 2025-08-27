@@ -86,10 +86,11 @@ const BoxWeather = ({
         <p>
           Feels like: {Number(weatherData.data.main.feels_like).toFixed(0)}°C
         </p>
-        <p>
-          Min: {Number(weatherData.data.main.temp_min).toFixed(0)}°C | Max:{" "}
-          {Number(weatherData.data.main.temp_max).toFixed(0)}°C
-        </p>
+        <div className="flex items-center gap-3">
+          <p>Min: {Number(weatherData.data.main.temp_min).toFixed(0)}°C</p>
+          <span>|</span>
+          <p> Max: {Number(weatherData.data.main.temp_max).toFixed(0)}°C</p>
+        </div>
         <p>Humidity: {weatherData.data.main.humidity}%</p>
         <p>
           Wind: {Number(weatherData.data.wind.speed).toFixed(1)} m/s (

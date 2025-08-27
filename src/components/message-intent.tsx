@@ -17,7 +17,7 @@ interface IMessageIntentProps {
 const MessageIntent = (props: IMessageIntentProps) => {
   const { message, index, isNewMessage } = props;
 
-  const { state } = useChat();
+  const { state, handleVote } = useChat();
 
   return (
     <div
@@ -40,7 +40,7 @@ const MessageIntent = (props: IMessageIntentProps) => {
           {message.content}
         </ReactMarkdown>
         <BoxWeather weatherData={message.data} />
-        <FooterMessage message={message} />
+        <FooterMessage message={message} handleVote={handleVote} />
       </div>
     </div>
   );
