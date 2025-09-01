@@ -19,7 +19,18 @@ export const GET = async (req: NextRequest) => {
         { status: 401 }
       );
     }
+
     const data = verifyJWT(token);
+
+    if (!data) {
+      console.log("Unauthorized access - JWT token deleted");
+      const res = NextResponse.json(
+        { success: false, error: "Unauthorized" },
+        { status: 401 }
+      );
+      res.cookies.delete("jwt_token");
+      return res;
+    }
 
     if (isGuest) {
       return NextResponse.json(

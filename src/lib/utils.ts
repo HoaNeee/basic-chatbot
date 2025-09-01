@@ -4,7 +4,7 @@ import { twMerge } from "tailwind-merge";
 import { v1 } from "uuid";
 import { compare, hash } from "bcrypt-ts";
 import jwt from "jsonwebtoken";
-import { NextRequest } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { ApiError } from "./errors";
 
 export const BASE_URL = process.env.BASE_URL || "http://localhost:3000";
@@ -43,7 +43,8 @@ export const verifyJWT = (token: string) => {
     const decoded = jwt.verify(token, secret);
     return decoded as { _id: string; email: string; iat: number; exp: number };
   } catch (error) {
-    throw new ApiError(401, "Invalid token");
+    console.log(error);
+    return null;
   }
 };
 
@@ -52,18 +53,22 @@ export const fakeMiddleware = (req: NextRequest) => {
 
   if (token) {
     const user = verifyJWT(token);
-    return user._id;
+    if (user) {
+      return user._id;
+    }
   }
 
   if (req.headers.get("authorization")) {
     const token = req.headers.get("authorization")?.split(" ")[1];
     if (token) {
       const user = verifyJWT(token);
-      return user._id;
+      if (user) {
+        return user._id;
+      }
     }
   }
 
-  return "";
+  throw new ApiError(401, "Unauthorized");
 };
 
 export const getValueInLocalStorage = (key: string) => {

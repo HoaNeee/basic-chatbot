@@ -27,7 +27,7 @@ export const POST = errorHandler(async (req: Request) => {
   res.cookies.set("jwt_token", token, {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
-    sameSite: "strict",
+    sameSite: "lax",
     path: "/",
     maxAge,
   });
@@ -35,7 +35,7 @@ export const POST = errorHandler(async (req: Request) => {
   res.cookies.set("is_guest", "true", {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
-    sameSite: "strict",
+    sameSite: "lax",
     path: "/",
     maxAge,
   });

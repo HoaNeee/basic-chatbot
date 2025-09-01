@@ -34,10 +34,16 @@ export const errorHandler = (
     } catch (error: any) {
       console.log(error);
       const status = error.status || 500;
-      return NextResponse.json(
+      const res = NextResponse.json(
         { error: error.message || getTypeError(status).message },
         { status }
       );
+
+      if (status === 401) {
+        res.cookies.delete("jwt_token");
+      }
+
+      return res;
     }
   };
 };
